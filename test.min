@@ -1,0 +1,10 @@
+function simple;
+beginparams
+	paraaaaa : integer;
+endparams
+beginlocals
+	n1, n2, n3 : integer;
+endlocals
+beginbody
+	read k;
+endbody
