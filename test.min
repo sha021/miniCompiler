@@ -1,6 +1,6 @@
 function simple;
 beginparams
-	paraaaaa : integer;
+	p : integer;
 endparams
 beginlocals
 	n1, n2, n3 : integer;
