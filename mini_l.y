@@ -122,12 +122,12 @@
 %%
 program: 
    {
-      printf("program -> epsilon");
+      printf("program -> epsilon\n");
       $$ = new program_struct;
       $$->code = "";
    }
    |function program {
-      printf("program -> function program");
+      printf("program -> function program\n");
       $$ = new program_struct; 
       ostringstream oss;
       oss << $1->code;
@@ -141,13 +141,14 @@ function:
       printf("function -> FUNCTION ident SEMICOLON BEGIN_PARAMS help_dec_semi END_PARAMS BEGIN_LOCALS help_dec_semi END_LOCALS BEGIN_BODY help_state_semi END_BODY\n");
       $$ = new function_struct;
       ostringstream oss;
-      oss << "function " << $2->code <<endl;
+      oss << "func " << $2->code <<endl;
       // For parameter declaratoin
       oss << $5->code;
       // For local declaration
       oss << $8->code;
       // For help statement semicolon
       oss << $11->code;
+      oss << "endfunc" << endl;
       $$->code = oss.str();  
    };
 
@@ -181,7 +182,7 @@ help_state_semi:
       printf("help_state_semi -> statement SEMICOLON\n");
       $$ = new help_state_semi_struct;
       ostringstream oss;
-      oss << $1->code;
+      oss << $1->code << endl;
       $$->code = oss.str();
    }
    |statement SEMICOLON help_state_semi {
