@@ -1,32 +1,38 @@
-help_vne_choices -> number
-term -> help_vne_choices
-multiplicative_expr -> term
-help_vne_choices -> number
-term -> help_vne_choices
-multiplicative_expr -> term
-help_vne_choices -> number
+help_vne_choices -> var
 term -> help_vne_choices
 multiplicative_expr -> term
 expression -> multiplicative_expr
+help_vne_choices -> number
+term -> help_vne_choices
+multiplicative_expr -> term
 expression -> multiplicative_expr ADD expression
-expression -> multiplicative_expr ADD expression
+help_vne_choices -> number
+term -> help_vne_choices
+multiplicative_expr -> term
+help_vne_choices -> number
+term -> help_vne_choices
+multiplicative_expr -> term MULT multiplicative_expr
+expression -> multiplicative_expr SUB expression
 statement -> var ASSIGN expression
 func main
 . n1
 . n2
 . p
 .< p
-.> p
 . __temp__1
-= __temp__1, 4
+= __temp__1, p
 . __temp__2
-= __temp__2, 2
+= __temp__2, 4
 . __temp__3
-= __temp__3, 1
++ __temp__3, __temp__1, __temp__2
 . __temp__4
-+ __temp__4, __temp__2, __temp__3
+= __temp__4, 2
 . __temp__5
-+ __temp__5, __temp__1, __temp__4
-= n1, __temp__5
-.> n1
+= __temp__5, 3
+. __temp__6
+* __temp__6, __temp__4, __temp__5
+. __temp__7
+- __temp__7, __temp__3, __temp__6
+= p, __temp__7
+.> p
 endfunc

@@ -5,6 +5,7 @@
  #include <sstream>
  #include <string>
  #include <vector>
+ #include <queue>
  using namespace std;
  extern int currLine;
  extern int currPos;
@@ -15,7 +16,7 @@
  void yyerror(const char *msg);
  vector<string> labels;
  vector<string> temps;
-
+ vector<string> addSub;
  struct program_struct {string code;};
  struct function_struct {string code;};
  struct help_dec_semi_struct {string code;};
@@ -34,12 +35,12 @@
  struct relation_expr_struct {string code;   string resultId;};
  struct help_re_choices_struct {string code; string resultId;};
  struct comp_struct {string code;};
- struct expression_struct {string code;   string resultId;};
- struct help_pm_me_struct {string code;};
+ struct expression_struct {string code;   string resultId; string oper;};
+ struct help_pm_me_struct {string code;   string resultId;  string oper;};
  struct multiplicative_expr_struct {string code;  string resultId;};
  struct help_mdm_term_struct {string code; string resultId;};
  struct term_struct {string code;   string resultId;};
- struct help_vne_choices_struct {string code;   string reslutId;};
+ struct help_vne_choices_struct {string code;   string resultId;};
  struct help_expr_struct {string code; string resultId;};
  struct var_struct{string code;  string resultId;};
  struct ident_struct {string code;  string resultId;};
@@ -80,9 +81,18 @@
 }
 %error-verbose
 %start program 
-%token NUMBER FUNCTION BEGIN_PARAMS END_PARAMS BEGIN_LOCALS END_LOCALS BEGIN_BODY END_BODY INTEGER ARRAY OF IF THEN ENDIF ELSE WHILE DO FOR BEGINLOOP ENDLOOP CONTINUE READ WRITE AND OR NOT TRUE FALSE RETURN SUB ADD MULT DIV MOD EQ NEQ LT GT LTE GTE IDENT SEMICOLON COLON COMMA L_PAREN R_PAREN L_SQUARE_BRACKET R_SQUARE_BRACKET ASSIGN
+%token NUMBER FUNCTION BEGIN_PARAMS END_PARAMS BEGIN_LOCALS END_LOCALS BEGIN_BODY END_BODY INTEGER ARRAY OF IF THEN ENDIF ELSE WHILE DO FOR BEGINLOOP ENDLOOP CONTINUE READ WRITE AND OR NOT TRUE FALSE RETURN ADD SUB MULT DIV MOD EQ NEQ LT GT LTE GTE IDENT SEMICOLON COLON COMMA L_PAREN R_PAREN L_SQUARE_BRACKET R_SQUARE_BRACKET ASSIGN
 %type <ival> NUMBER
 %type <sval> IDENT
+%left L_PAREN R_PAREN
+%left L_SQUARE_BRACKET R_SQUARE_BRACKET
+%left MULT DIV MOD 
+%left ADD SUB 
+%left LT LTE GT GTE EQ NEQ
+%right NOT 
+%left AND 
+%left OR
+%right ASSIGN
 %type <program_semval> program
 %type <function_semval> function
 %type <help_dec_semi_semval> help_dec_semi
@@ -111,15 +121,7 @@
 %type <var_semval> var
 %type <ident_semval> ident
 %type <number_semval> number
-%left L_PAREN R_PAREN
-%left L_SQUARE_BRACKET R_SQUARE_BRACKET
-%left MULT DIV MOD 
-%left ADD SUB 
-%left LT LTE GT GTE EQ NEQ
-%right NOT 
-%left AND 
-%left OR
-%right ASSIGN
+
 
 %%
 program: 
@@ -363,11 +365,10 @@ expression:
       $$->resultId = $1->resultId;
    }
 
-   |multiplicative_expr ADD expression {
+   |expression ADD multiplicative_expr {
       printf("expression -> multiplicative_expr ADD expression\n");
       $$ = new expression_struct;
       ostringstream oss;
-      
       string temp = new_temp();
 
       oss << $1->code << endl;
@@ -380,25 +381,20 @@ expression:
       $$->resultId = temp;
    }
 
-   |multiplicative_expr SUB expression{
-      printf("expression -> multiplicative_expr ADD expression\n");
+   |expression SUB multiplicative_expr{
+      printf("expression -> multiplicative_expr SUB expression\n");
       $$ = new expression_struct;
       ostringstream oss;
+      string temp = new_temp();
 
-      string src1 = new_temp();
-      oss << ". " << src1 << endl;
-      oss << "= " << src1 << ", " << $1->code << endl;
+      oss << $1->code << endl;
+      oss << $3->code << endl;
 
-      string src2 = new_temp();
-      oss << ". " << src2 << endl;
-      oss << "= " << src2 << ", " << $3->code << endl;;
-
-      string dst = new_temp();
-      oss << ". " << dst << endl;
-      oss << "- " << dst << ", " << src1 << ", " << src2;
+      oss << ". " << temp << endl;
+      oss << "- " << temp << ", " << $1->resultId << ", " << $3->resultId;
 
       $$->code = oss.str();
-      $$->resultId = dst;
+      $$->resultId = temp;
    };
 
 
@@ -412,27 +408,22 @@ multiplicative_expr:
       $$->code = oss.str();
       $$->resultId = $1->resultId;
    }
-   |term MULT multiplicative_expr {
+   |multiplicative_expr MULT term {
       printf("multiplicative_expr -> term MULT multiplicative_expr\n");
       $$ = new multiplicative_expr_struct;
       ostringstream oss;
+      string temp = new_temp();
 
-      string src1 = new_temp();
-      oss << ". " << src1 << endl;
-      oss << "= " << src1 << ", " << $1->code << endl;
+      oss << $1->code << endl;
+      oss << $3->code << endl;
 
-      string src2 = new_temp();
-      oss << ". " << src2 << endl;
-      oss << "= " << src2 << ", " << $3->code << endl;;
-
-      string dst = new_temp();
-      oss << ". " << dst << endl;
-      oss << "* " << dst << ", " << src1 << ", " << src2;
+      oss << ". " << temp << endl;
+      oss << "* " << temp << ", " << $1->resultId << ", " << $3->resultId;
 
       $$->code = oss.str();
-      $$->resultId = dst;
+      $$->resultId = temp;
    }
-   |term DIV multiplicative_expr {
+   |multiplicative_expr DIV term  {
       printf("multiplicative_expr -> term DIV multiplicative_expr\n");
       $$ = new multiplicative_expr_struct;
       ostringstream oss;
@@ -452,7 +443,7 @@ multiplicative_expr:
       $$->code = oss.str();
       $$->resultId = dst;
    }
-   |term MOD multiplicative_expr {
+   |multiplicative_expr MOD term  {
       printf("multiplicative_expr -> term MOD multiplicative_expr\n");
       $$ = new multiplicative_expr_struct;
       ostringstream oss;
@@ -475,7 +466,16 @@ multiplicative_expr:
    ;
 
 term:           
-   SUB help_vne_choices {printf("term -> SUB help_vne_choices\n");}
+   SUB help_vne_choices {printf("term -> SUB help_vne_choices\n");
+      printf("term -> help_vne_choices\n");
+      $$ = new term_struct;
+      ostringstream oss;
+      string temp = new_temp();
+      oss << ". " << temp << endl;
+      oss << "= " << temp << ", -" << $2->code;
+      $$->code = oss.str();
+      $$->resultId = temp;
+   }
    |help_vne_choices {
       printf("term -> help_vne_choices\n");
       $$ = new term_struct;
@@ -486,7 +486,7 @@ term:
       $$->code = oss.str();
       $$->resultId = temp;
    }
-   | ident L_PAREN help_expr R_PAREN {printf("term -> ident L_PAREN help_expr R_PAREN\n");}
+   |ident L_PAREN help_expr R_PAREN {printf("term -> ident L_PAREN help_expr R_PAREN\n");}
    |ident L_PAREN R_PAREN {
       printf("term -> ident L_PAREN R_PAREN\n");
       $$ = new term_struct;
