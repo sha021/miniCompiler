@@ -186,7 +186,7 @@ help_state_semi:
       $$ = new help_state_semi_struct;
       ostringstream oss;
       oss << $1->code << endl;
-        $$->code = oss.str();
+      $$->code = oss.str();
    }
    |statement SEMICOLON help_state_semi {
       //printf("help_state_semi -> statement SEMICOLON help_state_semi\n");
@@ -368,22 +368,18 @@ expression:
       $$ = new expression_struct;
       ostringstream oss;
       
-      string src1 = new_temp();
-      oss << ". " << src1 << endl;
-      oss << "= " << src1 << ", " << $1->code << endl;
+      string temp = new_temp();
 
-      string src2 = new_temp();
-      oss << ". " << src2 << endl;
-      oss << "= " << src2 << ", " << $3->code << endl;;
+      oss << $1->code << endl;
+      oss << $3->code << endl;
 
-      string dst = new_temp();
-      oss << ". " << dst << endl;
-      oss << "+ " << dst << ", " << src1 << ", " << src2;
+      oss << ". " << temp << endl;
+      oss << "+ " << temp << ", " << $1->resultId << ", " << $3->resultId;
 
       $$->code = oss.str();
-      $$->resultId = dst;
+      $$->resultId = temp;
    }
-   
+
    |multiplicative_expr SUB expression{
       printf("expression -> multiplicative_expr ADD expression\n");
       $$ = new expression_struct;
@@ -405,29 +401,7 @@ expression:
       $$->resultId = dst;
    };
 
-help_pm_me:     
-   {
-      printf("help_pm_me -> epsilon\n");
-      $$ = new help_pm_me_struct;
-      $$->code = "";
-   }
-   |ADD multiplicative_expr help_pm_me {
-      printf("help_pm_me -> ADD multiplicative_expr help_pm_me\n");
-      $$ = new help_pm_me_struct;
-      ostringstream oss;
-      string temp = new_temp();
-      // creating line before making __temp__
-      oss << endl;
-      oss << ". " << temp << endl;
-      oss << "= " << temp << ", " << $2->code;
 
-      oss << $3->code;
-      $$->code = oss.str();
-
-   }
-   |SUB multiplicative_expr help_pm_me {
-      printf("help_pm_me -> SUB multiplicative_expr help_pm_me\n");
-   };
 
 multiplicative_expr:    
    term {
@@ -436,6 +410,7 @@ multiplicative_expr:
       ostringstream oss;
       oss << $1->code;
       $$->code = oss.str();
+      $$->resultId = $1->resultId;
    }
    |term MULT multiplicative_expr {
       printf("multiplicative_expr -> term MULT multiplicative_expr\n");
@@ -499,25 +474,17 @@ multiplicative_expr:
    }
    ;
 
-help_mdm_term:  
-   {
-      printf("help_mdm_term -> epsilon\n");
-      $$ = new help_mdm_term_struct;
-      $$->code = "";
-   }
-   | MULT term help_mdm_term {printf("help_mdm_term -> MULT term help_mdm_term\n");}
-   | DIV term help_mdm_term {printf("help_mdm_term -> DIV term help_mdm_term\n");}
-   | MOD term help_mdm_term {printf("help_mdm_term -> MOD term help_mdm_term\n");}
-   ;
-
 term:           
    SUB help_vne_choices {printf("term -> SUB help_vne_choices\n");}
    |help_vne_choices {
       printf("term -> help_vne_choices\n");
       $$ = new term_struct;
       ostringstream oss;
-      oss << $1->code;
+      string temp = new_temp();
+      oss << ". " << temp << endl;
+      oss << "= " << temp << ", " << $1->code;
       $$->code = oss.str();
+      $$->resultId = temp;
    }
    | ident L_PAREN help_expr R_PAREN {printf("term -> ident L_PAREN help_expr R_PAREN\n");}
    |ident L_PAREN R_PAREN {
