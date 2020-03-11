@@ -4,13 +4,17 @@
  #include <iostream>
  #include <sstream>
  #include <string>
- void yyerror(const char *msg);
+ #include <vector>
+ using namespace std;
  extern int currLine;
  extern int currPos;
  extern FILE * yyin;
  int yylex();
- 
- using namespace std;
+ string new_label();
+ string new_temp();
+ void yyerror(const char *msg);
+ vector<string> labels;
+
  struct program_struct {string code;};
  struct function_struct {string code;};
  struct help_dec_semi_struct {string code;};
@@ -18,7 +22,6 @@
  struct help_state_semi_struct {string code;};
  struct declaration_struct {string code;};
  struct declaration_par_struct {string code;};
- struct help_id_comma_struct {string code; string resultId;};
  struct help_array_struct {string code;};
  struct statement_struct{string code;};
  struct bool_expr_struct {string code; string resultId;};
@@ -43,37 +46,36 @@
 %}
 
 %union{
-    int ival;
-    char *sval;
-    struct program_struct *program_semval;
-    struct help_dec_semi_struct *help_dec_semi_semval;
-    struct help_dec_semi_par_struct *help_dec_semi_par_semval;
-    struct function_struct *function_semval;
-    struct help_state_semi_struct *help_state_semi_semval;
-    struct declaration_struct *declaration_semval;
-    struct declaration_par_struct *declaration_par_semval;
-    struct help_id_comma_struct *help_id_comma_semval;
-    struct help_array_struct *help_array_semval;
-    struct statement_struct *statement_semval;
-    struct bool_expr_struct *bool_expr_semval;
-    struct help_if_then_struct *help_if_then_semval;
-    struct help_or_rae_struct *help_or_rae_semval;
-    struct help_var_comma_struct *help_var_comma_semaval;
-    struct relation_and_expr_struct *relation_and_expr_semval;
-    struct help_and_re_struct *help_and_re_semval;
-    struct relation_and_expr_struct *relation_expr_semval;
-    struct help_re_choices_struct *help_re_choices_semval;
-    struct comp_struct *comp_semval;
-    struct expression_struct *expression_semval;
-    struct help_pm_me_struct *help_pm_me_semval;
-    struct multiplicative_expr_struct *multiplicative_expr_semval;
-    struct help_mdm_term_struct *help_mdm_term_semval;
-    struct term_struct *term_semval;
-    struct help_vne_choices_struct *help_vne_choices_semval;
-    struct help_expr_struct *help_expr_semval;
-    struct var_struct *var_semval;
-    struct ident_struct *ident_semval;
-    struct number_struct *number_semval;
+   int ival;
+   char *sval;
+   struct program_struct *program_semval;
+   struct help_dec_semi_struct *help_dec_semi_semval;
+   struct help_dec_semi_par_struct *help_dec_semi_par_semval;
+   struct function_struct *function_semval;
+   struct help_state_semi_struct *help_state_semi_semval;
+   struct declaration_struct *declaration_semval;
+   struct declaration_par_struct *declaration_par_semval;
+   struct help_array_struct *help_array_semval;
+   struct statement_struct *statement_semval;
+   struct bool_expr_struct *bool_expr_semval;
+   struct help_if_then_struct *help_if_then_semval;
+   struct help_or_rae_struct *help_or_rae_semval;
+   struct help_var_comma_struct *help_var_comma_semaval;
+   struct relation_and_expr_struct *relation_and_expr_semval;
+   struct help_and_re_struct *help_and_re_semval;
+   struct relation_and_expr_struct *relation_expr_semval;
+   struct help_re_choices_struct *help_re_choices_semval;
+   struct comp_struct *comp_semval;
+   struct expression_struct *expression_semval;
+   struct help_pm_me_struct *help_pm_me_semval;
+   struct multiplicative_expr_struct *multiplicative_expr_semval;
+   struct help_mdm_term_struct *help_mdm_term_semval;
+   struct term_struct *term_semval;
+   struct help_vne_choices_struct *help_vne_choices_semval;
+   struct help_expr_struct *help_expr_semval;
+   struct var_struct *var_semval;
+   struct ident_struct *ident_semval;
+   struct number_struct *number_semval;
 }
 %error-verbose
 %start program 
@@ -94,7 +96,6 @@
 %type <help_or_rae_semval> help_or_rae
 %type <help_var_comma_semaval> help_var_comma
 %type <relation_and_expr_semval> relation_and_expr
-%type <help_id_comma_semval> help_id_comma
 %type <help_and_re_semval> help_and_re
 %type <relation_expr_semval> relation_expr
 %type <help_re_choices_semval> help_re_choices
@@ -122,23 +123,23 @@
 %%
 program: 
    {
-      printf("program -> epsilon\n");
+      //printf("program -> epsilon\n");
       $$ = new program_struct;
       $$->code = "";
    }
    |function program {
-      printf("program -> function program\n");
+      //printf("program -> function program\n");
       $$ = new program_struct; 
       ostringstream oss;
       oss << $1->code;
       $$->code = oss.str();
-      cout << $$->code << endl;
+      cout << $$->code;
       delete $1;
    };
 
 function:
    FUNCTION ident SEMICOLON BEGIN_PARAMS help_dec_semi_par END_PARAMS BEGIN_LOCALS help_dec_semi END_LOCALS BEGIN_BODY help_state_semi END_BODY {
-      printf("function -> FUNCTION ident SEMICOLON BEGIN_PARAMS help_dec_semi END_PARAMS BEGIN_LOCALS help_dec_semi END_LOCALS BEGIN_BODY help_state_semi END_BODY\n");
+      //printf("function -> FUNCTION ident SEMICOLON BEGIN_PARAMS help_dec_semi END_PARAMS BEGIN_LOCALS help_dec_semi END_LOCALS BEGIN_BODY help_state_semi END_BODY\n");
       $$ = new function_struct;
       ostringstream oss;
       oss << "func " << $2->code <<endl;
@@ -156,10 +157,10 @@ help_dec_semi_par:
    {
       $$ = new help_dec_semi_par_struct;
       $$->code ="";
-      printf("help_dec_semi_par -> epsilon\n");
+      //printf("help_dec_semi_par -> epsilon\n");
    }
    |declaration_par SEMICOLON help_dec_semi_par {
-      printf("help_dec_semi_par -> declaration_par SEMICOLON help_dec_semi_par\n");
+      //printf("help_dec_semi_par -> declaration_par SEMICOLON help_dec_semi_par\n");
       $$ = new help_dec_semi_par_struct;
       ostringstream oss;
       oss << $1->code << $3->code;
@@ -168,9 +169,10 @@ help_dec_semi_par:
 
 help_dec_semi: 
    {
-      printf("help_dec_semi -> epsilon\n");
+      //printf("help_dec_semi -> epsilon\n");
    }
-   |declaration SEMICOLON help_dec_semi {printf("help_dec_semi -> declaration SEMICOLON help_dec_semi\n");
+   |declaration SEMICOLON help_dec_semi {
+      //printf("help_dec_semi -> declaration SEMICOLON help_dec_semi\n");
       $$ = new help_dec_semi_struct;
       ostringstream oss;
       oss << $1->code;
@@ -179,24 +181,24 @@ help_dec_semi:
                 
 help_state_semi:
    statement SEMICOLON {
-      printf("help_state_semi -> statement SEMICOLON\n");
+      //printf("help_state_semi -> statement SEMICOLON\n");
       $$ = new help_state_semi_struct;
       ostringstream oss;
       oss << $1->code << endl;
-      $$->code = oss.str();
+        $$->code = oss.str();
    }
    |statement SEMICOLON help_state_semi {
-      printf("help_state_semi -> statement SEMICOLON help_state_semi\n");
+      //printf("help_state_semi -> statement SEMICOLON help_state_semi\n");
       $$ = new help_state_semi_struct;
       ostringstream oss;
       oss << $1->code << endl;
-      oss << $3->code << endl;
+      oss << $3->code;
       $$->code = oss.str();
    };
 
 declaration_par:	
    ident COLON help_array INTEGER {
-      printf("declaration_par -> ident COLON help_array INTEGER\n");
+      //printf("declaration_par -> ident COLON help_array INTEGER\n");
       $$ = new declaration_par_struct;
       ostringstream oss;
       oss << ". " << $1->code << endl;
@@ -204,7 +206,7 @@ declaration_par:
       $$->code = oss.str();
       }
    |ident COMMA declaration_par {
-      printf("declaraton_par -> ident COMMA declaration_par\n");
+      //printf("declaraton_par -> ident COMMA declaration_par\n");
       $$ = new declaration_par_struct;
       ostringstream oss;
       oss << ". " << $1->code << endl;
@@ -215,14 +217,14 @@ declaration_par:
 
 declaration:	
    ident COLON help_array INTEGER {
-      printf("declaration -> ident COLON help_array INTEGER\n");
+      //printf("declaration -> ident COLON help_array INTEGER\n");
       $$ = new declaration_struct;
       ostringstream oss;
       oss << ". " << $1->code << endl;
       $$->code = oss.str();
    }
    |ident COMMA declaration {
-      printf("ident COMMA declaration\n");
+      //printf("ident COMMA declaration\n");
       $$ = new declaration_struct;
       ostringstream oss;
       oss << ". " << $1->code << endl;
@@ -233,7 +235,7 @@ declaration:
 
 help_array: 
    {
-      printf("help_array -> epsilon\n");
+      //printf("help_array -> epsilon\n");
       $$ = new help_array_struct;
       $$->code = "";
    }
@@ -242,7 +244,9 @@ help_array:
    };
 
 statement:     
-   IF bool_expr THEN help_if_then ENDIF
+   IF bool_expr THEN help_if_then ENDIF {
+
+   }
 	|WHILE bool_expr BEGINLOOP help_state_semi ENDLOOP {
       printf("statement -> WHILE bool_expr BEGINLOOP help_state_semi ENDLOOP\n");
    }
@@ -253,14 +257,14 @@ statement:
       printf("statement ->  FOR var ASSIGN number SEMICOLON bool_expr SEMICOLON var ASSIGN expression BEGINLOOP help_state_semi ENDLOOP\n");
    }
    |READ help_var_comma {
-      printf("statement -> READ help_var_comma\n");
+      //printf("statement -> READ help_var_comma\n");
       $$ = new statement_struct;
       ostringstream oss;
       oss << ".< " << $2->code;
       $$->code = oss.str();
    }                
    |WRITE help_var_comma {
-      printf("statement -> WRITE help_var_comma\n");
+      //printf("statement -> WRITE help_var_comma\n");
       $$ = new statement_struct;
       ostringstream oss;
       oss << ".> " << $2->code;
@@ -274,6 +278,9 @@ statement:
    }
    |var ASSIGN expression {
       printf("statement -> var ASSIGN expression\n");
+      $$ = new statement_struct;
+      ostringstream oss;
+      oss << "= " << $1->code << ", " << $3->code;
    };		
 
 bool_expr:
@@ -302,7 +309,7 @@ help_var_comma:
       printf("help_var_comma -> var COMMA help_var_comma\n");
    }
    |var {
-      printf("help_var_comma -> var\n");
+      //printf("help_var_comma -> var\n");
       $$ = new help_var_comma_struct;
       ostringstream oss;
       oss << $1->code;
@@ -344,18 +351,35 @@ comp:
    ;
 
 expression:     
-   multiplicative_expr help_pm_me {printf("expression -> multiplicative_expr help_pm_me\n");}
-   ;
+   multiplicative_expr help_pm_me {
+      printf("expression -> multiplicative_expr help_pm_me\n");
+      $$ = new expression_struct;
+      ostringstream oss;
+      oss << $1->code << $3->code;
+      $$ = oss.str();
+   };
 
 help_pm_me:     
-   {printf("help_pm_me -> epsilon\n");}
-   |ADD multiplicative_expr help_pm_me {printf("help_pm_me -> ADD multiplicative_expr help_pm_me\n");}
-   |SUB multiplicative_expr help_pm_me {printf("help_pm_me -> SUB multiplicative_expr help_pm_me\n");}
-   ;
+   {
+      printf("help_pm_me -> epsilon\n");
+      $$ = new help_pm_me_struct;
+      $$ = "";
+   }
+   |ADD multiplicative_expr help_pm_me {
+      printf("help_pm_me -> ADD multiplicative_expr help_pm_me\n");
+      $$ = new help_pm_me_struct;
+      ostringstream oss;
+      
+   }
+   |SUB multiplicative_expr help_pm_me {
+      printf("help_pm_me -> SUB multiplicative_expr help_pm_me\n");
+   };
 
 multiplicative_expr:    
-   term help_mdm_term {printf("multiplicative_expr -> term help_mdm_term\n");}
-   ;
+   term help_mdm_term {
+      printf("multiplicative_expr -> term help_mdm_term\n");
+
+   };
 
 help_mdm_term:  
    {printf("help_mdm_term -> epsilon\n");}
@@ -383,18 +407,20 @@ help_expr:
    ;
 
 var:           
-   ident {printf("var -> ident\n");
+   ident {
+      //printf("var -> ident\n");
       $$ = new var_struct;
       ostringstream oss;
       oss << $1->code;
       $$->code = oss.str();
+      delete $1;
    }
    | ident L_SQUARE_BRACKET expression R_SQUARE_BRACKET {printf("var -> ident L_SQUARE_BRACKET expression R_SQUARE_BRACKET\n");}
    ;
 
 ident:         
    IDENT {
-      printf("ident -> IDENT %s\n", $1);
+      //printf("ident -> IDENT %s\n", $1);
       $$ = new ident_struct;
       ostringstream oss;
       oss << $1;
@@ -404,7 +430,8 @@ ident:
 
 number:        
    NUMBER {
-      printf("number -> NUMBER %d\n", $1);};
+      //printf("number -> NUMBER %d\n", $1);
+   };
 %%
 
 int main(int argc, char **argv) {
@@ -422,3 +449,14 @@ void yyerror(const char *msg) {
    printf("** Line %d, position %d: %s\n", currLine, currPos, msg);
 }
 
+string new_label() {
+   int number = static_cast<int>(labels.size()) + 1;
+   string label = "L"+ to_string(number);
+   return label;
+}
+
+string new_temp() {
+   int number = static_cast<int>(labels.size()) + 1;
+   string temp = "__temp__"+ to_string(number);
+   return temp;  
+}

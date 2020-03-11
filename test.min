@@ -1,10 +1,10 @@
-function simple;
+function main;
 beginparams
-	p : integer;
 endparams
 beginlocals
-	n1, n2, n3 : integer;
+	n1, n2, p : integer;
 endlocals
 beginbody
-	read k;
+	read p;
+	write p;
 endbody
