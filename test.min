@@ -6,6 +6,8 @@ beginlocals
 endlocals
 beginbody
 	read p;
-	p := p + 4 - 2 * 3;
+	if p < 3 then 
+	p := 2;
+	endif;
 	write p;
 endbody

@@ -2,18 +2,22 @@ help_vne_choices -> var
 term -> help_vne_choices
 multiplicative_expr -> term
 expression -> multiplicative_expr
+comp -> LT
 help_vne_choices -> number
 term -> help_vne_choices
 multiplicative_expr -> term
-expression -> multiplicative_expr ADD expression
+expression -> multiplicative_expr
+help_re_choices -> expression comp expression
+relation_expr -> help_re_choices
+relation_and_expr -> relation_expr
+help_or_rae -> epsilon
+bool_exp -> relation_and_expr help_or_rae
 help_vne_choices -> number
 term -> help_vne_choices
 multiplicative_expr -> term
-help_vne_choices -> number
-term -> help_vne_choices
-multiplicative_expr -> term MULT multiplicative_expr
-expression -> multiplicative_expr SUB expression
+expression -> multiplicative_expr
 statement -> var ASSIGN expression
+help_if_then -> help_state_semi
 func main
 . n1
 . n2
@@ -22,17 +26,13 @@ func main
 . __temp__1
 = __temp__1, p
 . __temp__2
-= __temp__2, 4
+= __temp__2, 3
 . __temp__3
-+ __temp__3, __temp__1, __temp__2
+< __temp__3, __temp__1, __temp__2
+?:= L1, __temp__3
+: L1
 . __temp__4
 = __temp__4, 2
-. __temp__5
-= __temp__5, 3
-. __temp__6
-* __temp__6, __temp__4, __temp__5
-. __temp__7
-- __temp__7, __temp__3, __temp__6
-= p, __temp__7
+= p, __temp__4
 .> p
 endfunc

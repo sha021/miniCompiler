@@ -16,7 +16,7 @@
  void yyerror(const char *msg);
  vector<string> labels;
  vector<string> temps;
- vector<string> addSub;
+ 
  struct program_struct {string code;};
  struct function_struct {string code;};
  struct help_dec_semi_struct {string code;};
@@ -65,7 +65,7 @@
    struct help_var_comma_struct *help_var_comma_semaval;
    struct relation_and_expr_struct *relation_and_expr_semval;
    struct help_and_re_struct *help_and_re_semval;
-   struct relation_and_expr_struct *relation_expr_semval;
+   struct relation_expr_struct *relation_expr_semval;
    struct help_re_choices_struct *help_re_choices_semval;
    struct comp_struct *comp_semval;
    struct expression_struct *expression_semval;
@@ -152,7 +152,7 @@ function:
       oss << $8->code;
       // For help statement semicolon
       oss << $11->code;
-      oss << "endfunc" << endl;
+      oss << "\nendfunc" << endl;
       $$->code = oss.str();  
    };
 
@@ -187,7 +187,7 @@ help_state_semi:
       //printf("help_state_semi -> statement SEMICOLON\n");
       $$ = new help_state_semi_struct;
       ostringstream oss;
-      oss << $1->code << endl;
+      oss << $1->code ;
       $$->code = oss.str();
    }
    |statement SEMICOLON help_state_semi {
@@ -248,6 +248,18 @@ help_array:
 
 statement:     
    IF bool_expr THEN help_if_then ENDIF {
+      string trueLable = new_label();
+      $$ = new statement_struct;
+
+      //string falseLable = new_label();
+      ostringstream oss;
+      oss << $2->code; 
+      oss << "?:= " << trueLable << ", " << $2->resultId << endl;
+      //oss << ":= " << falseLable << endl;
+      oss << ": " << trueLable << endl;
+      oss << $4->code;
+      //oss<< ": " << falseLable << endl;
+      $$->code = oss.str();
 
    }
 	|WHILE bool_expr BEGINLOOP help_state_semi ENDLOOP {
@@ -291,11 +303,21 @@ statement:
 bool_expr:
    relation_and_expr help_or_rae {
       printf("bool_exp -> relation_and_expr help_or_rae\n");
-      };
+      $$ = new bool_expr_struct;
+      ostringstream oss;
+      oss << $1->code;
+      oss << $2->code;
+      $$->code = oss.str();
+      $$->resultId = $1->resultId;
+   };
 
 help_if_then:   
    help_state_semi {
       printf("help_if_then -> help_state_semi\n");
+      $$ = new help_if_then_struct;
+      ostringstream oss;
+      oss << $1->code;
+      $$->code = oss.str();
    }
    |help_state_semi ELSE help_state_semi {
       printf("help_if_then -> help_state_semi ELSE help_state_semi\n");
@@ -304,13 +326,15 @@ help_if_then:
 help_or_rae:
    {
       printf("help_or_rae -> epsilon\n");
+      $$ = new help_or_rae_struct;
+      $$->code = "";
    }
-	|OR relation_and_expr help_or_rae {
+	|help_or_rae OR relation_and_expr  {
       printf("help_or_rae -> OR relation_and_expr help_or_rae\n");
    };
 
 help_var_comma: 
-   var COMMA help_var_comma {
+   help_var_comma COMMA var {
       printf("help_var_comma -> var COMMA help_var_comma\n");
    }
    |var {
@@ -322,13 +346,25 @@ help_var_comma:
    };
 
 relation_and_expr:	
-   relation_expr help_and_re {
-      printf("relation_and_expr -> relation_expr help_and_re\n");
+   relation_expr {
+      printf("relation_and_expr -> relation_expr\n");
+      $$ = new relation_and_expr_struct;
+      ostringstream oss;
+      oss << $1->code;
+      $$->code = oss.str();
+      $$->resultId = $1->resultId;
+      delete $1;
+   }
+   | relation_and_expr AND relation_expr {
+      printf("relation_and_expr -> relation_and_expr AND relation_expr\n");
+
    };
 
 help_and_re:	
    {
       printf("help_and_re -> epsilon\n");
+      $$ new help_array_struct;
+      $$->code = "";
    }
    |AND relation_expr help_and_re {
       printf("help_and_re -> AND relation_expr help_and_re\n");
@@ -336,11 +372,32 @@ help_and_re:
 
 relation_expr:  
    NOT help_re_choices {printf("relation_expr -> NOT help_re_choices\n");}
-   |help_re_choices {printf("relation_expr -> help_re_choices\n");}
-   ;
+   |help_re_choices {
+      printf("relation_expr -> help_re_choices\n");
+      $$ = new relation_expr_struct;
+      ostringstream oss;
+      oss << $1->code;
+      $$->code = oss.str();
+      $$->resultId = $1->resultId;
+      delete $1;
+   };
 
 help_re_choices:    
-   expression comp expression {printf("help_re_choices -> expression comp expression\n");}
+   expression comp expression {printf("help_re_choices -> expression comp expression\n");
+      $$ = new help_re_choices_struct;
+      ostringstream oss;
+
+      oss << $1->code << endl;
+      oss << $3->code << endl;
+
+      string dst = new_temp();
+      oss << ". " << dst << endl;
+      oss << $2->code << dst << ", " << $1-> resultId << ", " << $3->resultId << endl;
+     
+      $$->code = oss.str();
+      $$->resultId = dst;
+      delete $1, $2, $3;
+   }
    |TRUE {printf("help_re_choices -> TRUE\n");}
    |FALSE {printf("help_re_choices -> FALSE\n");}
    |L_PAREN bool_expr R_PAREN {printf("help_re_choices -> L_PAREN bool_expr R_PAREN\n");}
@@ -349,7 +406,11 @@ help_re_choices:
 comp:           
    EQ {printf("comp -> EQ\n");}
    |NEQ {printf("comp -> NEQ\n");}
-   |LT {printf("comp -> LT\n");}
+   |LT {
+      printf("comp -> LT\n");
+      $$ = new comp_struct;
+      $$->code = "< ";
+   }
    |GT {printf("comp -> GT\n");}
    |LTE {printf("comp -> LTE\n");}
    |GTE {printf("comp -> GTE\n");}
@@ -396,7 +457,6 @@ expression:
       $$->code = oss.str();
       $$->resultId = temp;
    };
-
 
 
 multiplicative_expr:    
