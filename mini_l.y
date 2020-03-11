@@ -14,6 +14,7 @@
  string new_temp();
  void yyerror(const char *msg);
  vector<string> labels;
+ vector<string> temps;
 
  struct program_struct {string code;};
  struct function_struct {string code;};
@@ -280,7 +281,9 @@ statement:
       printf("statement -> var ASSIGN expression\n");
       $$ = new statement_struct;
       ostringstream oss;
-      oss << "= " << $1->code << ", " << $3->code;
+      oss << $3->code << endl;
+      oss << "= " << $1->code << ", " << $3->resultId;
+      $$->code = oss.str();
    };		
 
 bool_expr:
@@ -351,38 +354,157 @@ comp:
    ;
 
 expression:     
-   multiplicative_expr help_pm_me {
-      printf("expression -> multiplicative_expr help_pm_me\n");
+   multiplicative_expr {
+      printf("expression -> multiplicative_expr\n");
       $$ = new expression_struct;
       ostringstream oss;
-      oss << $1->code << $3->code;
-      $$ = oss.str();
+      oss << $1->code;
+      $$->code = oss.str();
+      $$->resultId = $1->resultId;
+   }
+
+   |multiplicative_expr ADD expression {
+      printf("expression -> multiplicative_expr ADD expression\n");
+      $$ = new expression_struct;
+      ostringstream oss;
+      
+      string src1 = new_temp();
+      oss << ". " << src1 << endl;
+      oss << "= " << src1 << ", " << $1->code << endl;
+
+      string src2 = new_temp();
+      oss << ". " << src2 << endl;
+      oss << "= " << src2 << ", " << $3->code << endl;;
+
+      string dst = new_temp();
+      oss << ". " << dst << endl;
+      oss << "+ " << dst << ", " << src1 << ", " << src2;
+
+      $$->code = oss.str();
+      $$->resultId = dst;
+   }
+   
+   |multiplicative_expr SUB expression{
+      printf("expression -> multiplicative_expr ADD expression\n");
+      $$ = new expression_struct;
+      ostringstream oss;
+
+      string src1 = new_temp();
+      oss << ". " << src1 << endl;
+      oss << "= " << src1 << ", " << $1->code << endl;
+
+      string src2 = new_temp();
+      oss << ". " << src2 << endl;
+      oss << "= " << src2 << ", " << $3->code << endl;;
+
+      string dst = new_temp();
+      oss << ". " << dst << endl;
+      oss << "- " << dst << ", " << src1 << ", " << src2;
+
+      $$->code = oss.str();
+      $$->resultId = dst;
    };
 
 help_pm_me:     
    {
       printf("help_pm_me -> epsilon\n");
       $$ = new help_pm_me_struct;
-      $$ = "";
+      $$->code = "";
    }
    |ADD multiplicative_expr help_pm_me {
       printf("help_pm_me -> ADD multiplicative_expr help_pm_me\n");
       $$ = new help_pm_me_struct;
       ostringstream oss;
-      
+      string temp = new_temp();
+      // creating line before making __temp__
+      oss << endl;
+      oss << ". " << temp << endl;
+      oss << "= " << temp << ", " << $2->code;
+
+      oss << $3->code;
+      $$->code = oss.str();
+
    }
    |SUB multiplicative_expr help_pm_me {
       printf("help_pm_me -> SUB multiplicative_expr help_pm_me\n");
    };
 
 multiplicative_expr:    
-   term help_mdm_term {
-      printf("multiplicative_expr -> term help_mdm_term\n");
+   term {
+      printf("multiplicative_expr -> term\n");
+      $$ = new multiplicative_expr_struct;
+      ostringstream oss;
+      oss << $1->code;
+      $$->code = oss.str();
+   }
+   |term MULT multiplicative_expr {
+      printf("multiplicative_expr -> term MULT multiplicative_expr\n");
+      $$ = new multiplicative_expr_struct;
+      ostringstream oss;
 
-   };
+      string src1 = new_temp();
+      oss << ". " << src1 << endl;
+      oss << "= " << src1 << ", " << $1->code << endl;
+
+      string src2 = new_temp();
+      oss << ". " << src2 << endl;
+      oss << "= " << src2 << ", " << $3->code << endl;;
+
+      string dst = new_temp();
+      oss << ". " << dst << endl;
+      oss << "* " << dst << ", " << src1 << ", " << src2;
+
+      $$->code = oss.str();
+      $$->resultId = dst;
+   }
+   |term DIV multiplicative_expr {
+      printf("multiplicative_expr -> term DIV multiplicative_expr\n");
+      $$ = new multiplicative_expr_struct;
+      ostringstream oss;
+
+      string src1 = new_temp();
+      oss << ". " << src1 << endl;
+      oss << "= " << src1 << ", " << $1->code << endl;
+
+      string src2 = new_temp();
+      oss << ". " << src2 << endl;
+      oss << "= " << src2 << ", " << $3->code << endl;;
+
+      string dst = new_temp();
+      oss << ". " << dst << endl;
+      oss << "/ " << dst << ", " << src1 << ", " << src2;
+
+      $$->code = oss.str();
+      $$->resultId = dst;
+   }
+   |term MOD multiplicative_expr {
+      printf("multiplicative_expr -> term MOD multiplicative_expr\n");
+      $$ = new multiplicative_expr_struct;
+      ostringstream oss;
+
+      string src1 = new_temp();
+      oss << ". " << src1 << endl;
+      oss << "= " << src1 << ", " << $1->code << endl;
+
+      string src2 = new_temp();
+      oss << ". " << src2 << endl;
+      oss << "= " << src2 << ", " << $3->code << endl;;
+
+      string dst = new_temp();
+      oss << ". " << dst << endl;
+      oss << "% " << dst << ", " << src1 << ", " << src2;
+
+      $$->code = oss.str();
+      $$->resultId = dst;
+   }
+   ;
 
 help_mdm_term:  
-   {printf("help_mdm_term -> epsilon\n");}
+   {
+      printf("help_mdm_term -> epsilon\n");
+      $$ = new help_mdm_term_struct;
+      $$->code = "";
+   }
    | MULT term help_mdm_term {printf("help_mdm_term -> MULT term help_mdm_term\n");}
    | DIV term help_mdm_term {printf("help_mdm_term -> DIV term help_mdm_term\n");}
    | MOD term help_mdm_term {printf("help_mdm_term -> MOD term help_mdm_term\n");}
@@ -390,19 +512,48 @@ help_mdm_term:
 
 term:           
    SUB help_vne_choices {printf("term -> SUB help_vne_choices\n");}
-   | help_vne_choices {printf("term -> help_vne_choices\n");}
+   |help_vne_choices {
+      printf("term -> help_vne_choices\n");
+      $$ = new term_struct;
+      ostringstream oss;
+      oss << $1->code;
+      $$->code = oss.str();
+   }
    | ident L_PAREN help_expr R_PAREN {printf("term -> ident L_PAREN help_expr R_PAREN\n");}
-   | ident L_PAREN R_PAREN {printf("term -> ident L_PAREN R_PAREN\n");}
-   ;
+   |ident L_PAREN R_PAREN {
+      printf("term -> ident L_PAREN R_PAREN\n");
+      $$ = new term_struct;
+      ostringstream oss;
+      oss << $1->code;
+      $$->code = oss.str(); 
+   };
 
 help_vne_choices:       
-   var {printf("help_vne_choices -> var\n");}
-   | number {printf("help_vne_choices -> number\n");}
+   var {
+      printf("help_vne_choices -> var\n");
+      $$ = new help_vne_choices_struct;
+      ostringstream oss;
+      oss << $1->code;
+      $$->code = oss.str();
+   }
+   | number {
+      printf("help_vne_choices -> number\n");
+      $$ = new help_vne_choices_struct;
+      ostringstream oss;
+      oss << $1->code;
+      $$->code = oss.str();
+   }
    | L_PAREN expression R_PAREN {printf("help_vne_choices -> L_PAREN expression R_PAREN\n");}
    ;
 
 help_expr:       
-   expression {printf("help_expr -> expression\n");}
+   expression {
+      printf("help_expr -> expression\n");
+      $$ = new help_expr_struct;
+      ostringstream oss;
+      oss << $1->code;
+      $$->code = oss.str();
+   }
    | expression COMMA help_expr {printf("help_expr -> expression COMMA help_expr\n");}
    ;
 
@@ -413,7 +564,6 @@ var:
       ostringstream oss;
       oss << $1->code;
       $$->code = oss.str();
-      delete $1;
    }
    | ident L_SQUARE_BRACKET expression R_SQUARE_BRACKET {printf("var -> ident L_SQUARE_BRACKET expression R_SQUARE_BRACKET\n");}
    ;
@@ -431,6 +581,11 @@ ident:
 number:        
    NUMBER {
       //printf("number -> NUMBER %d\n", $1);
+      $$ = new number_struct;
+      ostringstream oss;
+      oss << $1;
+      $$->resultId = oss.str();
+      $$->code = oss.str();
    };
 %%
 
@@ -450,13 +605,15 @@ void yyerror(const char *msg) {
 }
 
 string new_label() {
-   int number = static_cast<int>(labels.size()) + 1;
+   labels.push_back("a");
+   int number = static_cast<int>(labels.size());
    string label = "L"+ to_string(number);
    return label;
 }
 
 string new_temp() {
-   int number = static_cast<int>(labels.size()) + 1;
+   temps.push_back("a");
+   int number = static_cast<int>(temps.size());
    string temp = "__temp__"+ to_string(number);
    return temp;  
 }

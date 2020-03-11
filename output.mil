@@ -1,7 +1,24 @@
+help_vne_choices -> number
+term -> help_vne_choices
+multiplicative_expr -> term
+help_vne_choices -> number
+term -> help_vne_choices
+multiplicative_expr -> term
+expression -> multiplicative_expr
+expression -> multiplicative_expr ADD expression
+statement -> var ASSIGN expression
 func main
 . n1
 . n2
 . p
 .< p
 .> p
+. __temp__1
+= __temp__1, 4
+. __temp__2
+= __temp__2, 2
+. __temp__3
++ __temp__3, __temp__1, __temp__2
+= n1, __temp__3
+.> n1
 endfunc

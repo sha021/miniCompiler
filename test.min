@@ -7,4 +7,6 @@ endlocals
 beginbody
 	read p;
 	write p;
+	n1 := 4 + 2;
+	write n1;
 endbody
