@@ -7,7 +7,9 @@ endlocals
 beginbody
 	read p;
 	if p < 3 then 
-	p := 2;
+	p := 0;
+	else
+	p := 10;
 	endif;
 	write p;
 endbody

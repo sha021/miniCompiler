@@ -25,9 +25,9 @@
  struct declaration_struct {string code;};
  struct declaration_par_struct {string code;};
  struct help_array_struct {string code;};
- struct statement_struct{string code;};
+ struct statement_struct{string code;   string falseCode;};
  struct bool_expr_struct {string code; string resultId;};
- struct help_if_then_struct {string code; string resultId;};
+ struct help_if_then_struct {string code; string falseCode;   string resultId;};
  struct help_or_rae_struct {string code;};
  struct help_var_comma_struct {string code;  string resultId;};
  struct relation_and_expr_struct {string code;  string resultId;};
@@ -249,16 +249,17 @@ help_array:
 statement:     
    IF bool_expr THEN help_if_then ENDIF {
       string trueLable = new_label();
+      string falseLable = new_label();
       $$ = new statement_struct;
 
-      //string falseLable = new_label();
       ostringstream oss;
       oss << $2->code; 
       oss << "?:= " << trueLable << ", " << $2->resultId << endl;
-      //oss << ":= " << falseLable << endl;
+      oss << ":= " << falseLable << endl;
       oss << ": " << trueLable << endl;
-      oss << $4->code;
-      //oss<< ": " << falseLable << endl;
+      oss << $4->code << endl;
+      oss << ": " << falseLable << endl;
+      oss << $4->falseCode;
       $$->code = oss.str();
 
    }
@@ -318,9 +319,18 @@ help_if_then:
       ostringstream oss;
       oss << $1->code;
       $$->code = oss.str();
+      $$->falseCode = "";
    }
    |help_state_semi ELSE help_state_semi {
       printf("help_if_then -> help_state_semi ELSE help_state_semi\n");
+      $$ = new help_if_then_struct;
+      ostringstream oss;
+      oss << $1->code;
+
+      ostringstream oss2;
+      oss2 << $3->code;
+      $$->code = oss.str();
+      $$->falseCode = oss2.str();
    };
 
 help_or_rae:

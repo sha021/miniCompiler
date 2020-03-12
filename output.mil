@@ -17,7 +17,12 @@ term -> help_vne_choices
 multiplicative_expr -> term
 expression -> multiplicative_expr
 statement -> var ASSIGN expression
-help_if_then -> help_state_semi
+help_vne_choices -> number
+term -> help_vne_choices
+multiplicative_expr -> term
+expression -> multiplicative_expr
+statement -> var ASSIGN expression
+help_if_then -> help_state_semi ELSE help_state_semi
 func main
 . n1
 . n2
@@ -30,9 +35,14 @@ func main
 . __temp__3
 < __temp__3, __temp__1, __temp__2
 ?:= L1, __temp__3
+:= L2
 : L1
 . __temp__4
-= __temp__4, 2
+= __temp__4, 0
 = p, __temp__4
+: L2
+. __temp__5
+= __temp__5, 10
+= p, __temp__5
 .> p
 endfunc
