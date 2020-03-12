@@ -644,13 +644,17 @@ void yyerror(const char *msg) {
 string new_label() {
    labels.push_back("a");
    int number = static_cast<int>(labels.size());
-   string label = "L"+ to_string(number);
+   stringstream ss;
+   ss << number;
+   string label = "L" + ss.str();
    return label;
 }
 
 string new_temp() {
    temps.push_back("a");
    int number = static_cast<int>(temps.size());
-   string temp = "__temp__"+ to_string(number);
+   stringstream ss;
+   ss << number;
+   string temp = "__temp__"+ ss.str();
    return temp;  
 }
