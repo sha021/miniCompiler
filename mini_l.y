@@ -16,7 +16,7 @@
  void yyerror(const char *msg);
  vector<string> labels;
  vector<string> temps;
- 
+ queue<string> holder;
  struct program_struct {string code;};
  struct function_struct {string code;};
  struct help_dec_semi_struct {string code;};
@@ -28,7 +28,7 @@
  struct statement_struct{string code;   string falseCode;};
  struct bool_expr_struct {string code; string resultId;};
  struct help_if_then_struct {string code; string falseCode;   string resultId;};
- struct help_or_rae_struct {string code;};
+ struct help_or_rae_struct {string code;  string resultId;};
  struct help_var_comma_struct {string code;  string resultId;};
  struct relation_and_expr_struct {string code;  string resultId;};
  struct help_and_re_struct{string code;};
@@ -250,18 +250,20 @@ statement:
    IF bool_expr THEN help_if_then ENDIF {
       string trueLable = new_label();
       string falseLable = new_label();
-      $$ = new statement_struct;
+      string exitLable = new_label();
 
+      $$ = new statement_struct;
       ostringstream oss;
-      oss << $2->code; 
+      oss << $2->code << endl;
       oss << "?:= " << trueLable << ", " << $2->resultId << endl;
       oss << ":= " << falseLable << endl;
       oss << ": " << trueLable << endl;
       oss << $4->code << endl;
+      oss <<":= " << exitLable << endl;
       oss << ": " << falseLable << endl;
-      oss << $4->falseCode;
+      oss << $4->falseCode << endl;
+      oss << ": " << exitLable;
       $$->code = oss.str();
-
    }
 	|WHILE bool_expr BEGINLOOP help_state_semi ENDLOOP {
       printf("statement -> WHILE bool_expr BEGINLOOP help_state_semi ENDLOOP\n");
@@ -301,15 +303,29 @@ statement:
       $$->code = oss.str();
    };		
 
+
 bool_expr:
-   relation_and_expr help_or_rae {
-      printf("bool_exp -> relation_and_expr help_or_rae\n");
+   relation_and_expr {
       $$ = new bool_expr_struct;
       ostringstream oss;
       oss << $1->code;
-      oss << $2->code;
       $$->code = oss.str();
-      $$->resultId = $1->resultId;
+      $$->resultId = $1->resultId;     
+   }
+
+   |bool_expr OR relation_and_expr {
+      $$ = new bool_expr_struct;
+      ostringstream oss;
+      string temp = new_temp();
+
+      oss << $1->code;
+      oss << $3->code;
+
+      oss << ". " << temp << endl;
+      oss << "|| " << temp << ", " << $1->resultId << ", " << $3->resultId << endl;
+
+      $$->code = oss.str();
+      $$->resultId = temp;
    };
 
 help_if_then:   
@@ -331,16 +347,6 @@ help_if_then:
       oss2 << $3->code;
       $$->code = oss.str();
       $$->falseCode = oss2.str();
-   };
-
-help_or_rae:
-   {
-      printf("help_or_rae -> epsilon\n");
-      $$ = new help_or_rae_struct;
-      $$->code = "";
-   }
-	|help_or_rae OR relation_and_expr  {
-      printf("help_or_rae -> OR relation_and_expr help_or_rae\n");
    };
 
 help_var_comma: 
@@ -367,7 +373,18 @@ relation_and_expr:
    }
    | relation_and_expr AND relation_expr {
       printf("relation_and_expr -> relation_and_expr AND relation_expr\n");
+      $$ = new relation_and_expr_struct;
+      ostringstream oss;
+      string temp = new_temp();
 
+      oss << $1->code;
+      oss << $3->code;
+
+      oss << ". " << temp << endl;
+      oss << "&& " << temp << ", " << $1->resultId << ", " << $3->resultId << endl;
+
+      $$->code = oss.str();
+      $$->resultId = temp;
    };
 
 help_and_re:	
@@ -381,7 +398,17 @@ help_and_re:
    };
 
 relation_expr:  
-   NOT help_re_choices {printf("relation_expr -> NOT help_re_choices\n");}
+   NOT help_re_choices {printf("relation_expr -> NOT help_re_choices\n");
+      $$ = new relation_expr_struct;
+      ostringstream oss; 
+      oss << $2->code << endl;
+      string temp = new_temp();
+      oss << ". " << temp << endl;
+      oss << "! " << temp << ", " << $2->resultId;
+      $$->code = oss.str();
+      $$->resultId = temp;
+      delete $2;
+   }
    |help_re_choices {
       printf("relation_expr -> help_re_choices\n");
       $$ = new relation_expr_struct;
@@ -408,23 +435,53 @@ help_re_choices:
       $$->resultId = dst;
       delete $1, $2, $3;
    }
-   |TRUE {printf("help_re_choices -> TRUE\n");}
-   |FALSE {printf("help_re_choices -> FALSE\n");}
+   |TRUE {printf("help_re_choices -> TRUE\n");
+      $$ = new help_re_choices_struct;
+      ostringstream oss;
+      string temp = new_temp();
+      oss << ". " << temp << endl;
+      oss << "= " << temp << ", " << "1";
+      $$->code = oss.str();
+      $$->resultId = temp;
+   }
+   |FALSE {printf("help_re_choices -> FALSE\n");
+      $$ = new help_re_choices_struct;
+      ostringstream oss;
+      string temp = new_temp();
+      oss << ". " << temp << endl;
+      oss << "= " << temp << ", " << "0";
+      $$->code = oss.str();
+      $$->resultId = temp;
+   }
    |L_PAREN bool_expr R_PAREN {printf("help_re_choices -> L_PAREN bool_expr R_PAREN\n");}
    ;
 
 comp:           
-   EQ {printf("comp -> EQ\n");}
-   |NEQ {printf("comp -> NEQ\n");}
+   EQ {printf("comp -> EQ\n");
+      $$ = new comp_struct;
+      $$->code = "== ";
+   }
+   |NEQ {printf("comp -> NEQ\n");
+      $$ = new comp_struct;
+      $$->code = "!= ";
+   }
    |LT {
       printf("comp -> LT\n");
       $$ = new comp_struct;
       $$->code = "< ";
    }
-   |GT {printf("comp -> GT\n");}
-   |LTE {printf("comp -> LTE\n");}
-   |GTE {printf("comp -> GTE\n");}
-   ;
+   |GT {printf("comp -> GT\n");
+      $$ = new comp_struct;
+      $$->code = "> ";
+   }
+   |LTE {printf("comp -> LTE\n");
+      $$ = new comp_struct;
+      $$->code = "<= ";
+   }
+   |GTE {printf("comp -> GTE\n");
+      $$ = new comp_struct;
+      $$->code = ">= ";
+   };
 
 expression:     
    multiplicative_expr {
