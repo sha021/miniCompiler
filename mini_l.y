@@ -295,7 +295,7 @@ statement:
    |FOR var ASSIGN number SEMICOLON bool_expr SEMICOLON var ASSIGN expression BEGINLOOP help_state_semi ENDLOOP {
       printf("statement ->  FOR var ASSIGN number SEMICOLON bool_expr SEMICOLON var ASSIGN expression BEGINLOOP help_state_semi ENDLOOP\n");
    }
-   |READ help_var_comma {
+   |READ var help_var_comma {
       //printf("statement -> READ help_var_comma\n");
       $$ = new statement_struct;
       string temp;
@@ -305,18 +305,58 @@ statement:
          oss << ".[]< " << $2->id << ", " << $2->index;
       }
       else oss << ".< " << $2->code;
+
+      while (!holder.empty()){
+         oss << endl;
+         if (holder.front() == "array") {
+            holder.pop();
+            oss << holder.front();
+            holder.pop();
+            oss << ".[]< " << holder.front();
+            holder.pop();
+            oss << ", " << holder.front();
+            holder.pop();
+         }
+         else {
+            holder.pop();
+            oss << ".< " << holder.front();
+            holder.pop();
+            holder.pop();
+            holder.pop();
+         }   
+      }
       $$->code = oss.str();
    }                
-   |WRITE help_var_comma {
+   |WRITE var help_var_comma {
       //printf("statement -> WRITE help_var_comma\n");
       $$ = new statement_struct;
       ostringstream oss;
-
+      
       if ($2->type != "") {
          oss << $2->code;
          oss << ".[]> " << $2->id << ", " << $2->index;
       }
       else oss << ".> " << $2->code;
+
+      while (!holder.empty()){
+         oss << endl;
+         if (holder.front() == "array") {
+            holder.pop();
+            oss << holder.front();
+            holder.pop();
+            oss << ".[]> " << holder.front();
+            holder.pop();
+            oss << ", " << holder.front();
+            holder.pop();
+         }
+         else {
+            holder.pop();
+            oss << ".> " << holder.front();
+            holder.pop();
+            holder.pop();
+            holder.pop();
+         }       
+      }
       $$->code = oss.str();
    }
    |CONTINUE {
@@ -330,7 +370,7 @@ statement:
       $$ = new statement_struct;
       ostringstream oss;
 
-      if ($1->type != "id") {
+      if ($1->type != "") {
          // var -> expression code
          oss << $1->code;
          oss << $3->code << endl;
@@ -396,17 +436,40 @@ help_if_then:
 help_var_comma: 
    help_var_comma COMMA var {
       printf("help_var_comma -> var COMMA help_var_comma\n");
-   }
-   |var {
-      //printf("help_var_comma -> var\n");
       $$ = new help_var_comma_struct;
+
       ostringstream oss;
+      oss << $3->code;
       oss << $1->code;
+
+      cout << "COOOODDDEE ________ " << $3->code << endl;
+
+      holder.push($3->type);
+            holder.push($3->code);
+      holder.push($3->id);
+      holder.push($3->index);
+
       $$->code = oss.str();
-      $$->type = $1->type;
-      $$->id= $1->id;
-      $$->index = $1->index;
+      $$->type = $3->type;
+      $$->id= $3->id;
+      $$->index = $3->index;
+   }
+
+   |{
+      $$ = new help_var_comma_struct;
+      $$->code = "";
    };
+
+   // |var {
+   //    //printf("help_var_comma -> var\n");
+   //    $$ = new help_var_comma_struct;
+   //    ostringstream oss;
+   //    oss << $1->code;
+   //    $$->code = oss.str();
+   //    $$->type = $1->type;
+   //    $$->id= $1->id;
+   //    $$->index = $1->index;
+   // };
 
 relation_and_expr:	
    relation_expr {
@@ -662,7 +725,7 @@ term:
       $$ = new term_struct;
       ostringstream oss;
       string temp = new_temp();
-      if ($1->type == "array") oss << $1->code;
+      if ($1->type != "") oss << $1->code;
       oss << ". " << temp << endl;
       oss << "= " << temp << ", " << $1->resultId;
       
@@ -703,7 +766,7 @@ help_vne_choices:
       $$->code = oss.str();
       $$->resultId = $1->code;
       $$->index = $1->code;
-      $$->type = "number";
+      $$->type = "";
    }
    | L_PAREN expression R_PAREN {printf("help_vne_choices -> L_PAREN expression R_PAREN\n");
       $$ = new help_vne_choices_struct;
@@ -721,6 +784,7 @@ help_expr:
       ostringstream oss;
       oss << $1->code;
       $$->code = oss.str();
+      delete $1;
    }
    | expression COMMA help_expr {printf("help_expr -> expression COMMA help_expr\n");}
    ;
@@ -733,7 +797,7 @@ var:
       oss << $1->code;
       $$->code = oss.str();
       $$->resultId = $1->code;
-      $$->type = "id";
+      $$->type = "";
    }
    | ident L_SQUARE_BRACKET expression R_SQUARE_BRACKET {printf("var -> ident L_SQUARE_BRACKET expression R_SQUARE_BRACKET\n");
       $$ = new var_struct;
@@ -743,7 +807,7 @@ var:
       // code for expression
       
       string temp = new_temp();
-      if ($3->type == "array"){
+      if ($3->type != ""){
          oss << ". " << temp << endl;
          oss << "=[] " << temp << ", " << $3->id << ", " << $3->index << endl; 
       }      
@@ -757,6 +821,7 @@ var:
       $$->resultId = temp;
       $$->code = oss.str();
       $$->type = "array";   
+      delete $1, $3;
    };
 
 ident:         
@@ -765,7 +830,7 @@ ident:
       $$ = new ident_struct;
       ostringstream oss;
       oss << $1;
-      $$->resultId = oss.str();
+      $$->resultId = "";
       $$->code = oss.str();
    };
 
@@ -775,7 +840,7 @@ number:
       $$ = new number_struct;
       ostringstream oss;
       oss << $1;
-      $$->resultId = oss.str();
+      $$->resultId = "";
       $$->code = oss.str();
    };
 %%

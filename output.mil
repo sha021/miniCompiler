@@ -1,6 +1,19 @@
 ident COMMA declaration
+ident COMMA declaration
 help_array -> ARRAY L_SQUARE_BRACKET number R_SQUARE_BRACKET OF
 ident COMMA declaration
+help_vne_choices -> number
+term -> help_vne_choices
+multiplicative_expr -> term
+expression -> multiplicative_expr
+statement -> var ASSIGN expression
+help_var_comma -> var COMMA help_var_comma
+COOOODDDEE ________ k
+help_vne_choices -> var
+term -> help_vne_choices
+multiplicative_expr -> term
+expression -> multiplicative_expr
+var -> ident L_SQUARE_BRACKET expression R_SQUARE_BRACKET
 help_vne_choices -> number
 term -> help_vne_choices
 multiplicative_expr -> term
@@ -11,27 +24,40 @@ term -> help_vne_choices
 multiplicative_expr -> term
 expression -> multiplicative_expr
 var -> ident L_SQUARE_BRACKET expression R_SQUARE_BRACKET
-help_vne_choices -> var
-term -> help_vne_choices
-multiplicative_expr -> term
-expression -> multiplicative_expr
-var -> ident L_SQUARE_BRACKET expression R_SQUARE_BRACKET
+help_var_comma -> var COMMA help_var_comma
+COOOODDDEE ________ . __temp__5
+= __temp__5, n
+. __temp__6
+= __temp__6, __temp__5
+
+help_var_comma -> var COMMA help_var_comma
+COOOODDDEE ________ m
+help_var_comma -> var COMMA help_var_comma
+COOOODDDEE ________ k
 func main
 . n
 . m
+. k
 .[] p, 1
 .[] q, 1
 . __temp__1
 = __temp__1, 0
 = n, __temp__1
+.< m
+.< k
 . __temp__2
 = __temp__2, n
 . __temp__3
 = __temp__3, __temp__2
-.[]< q, __temp__2
 . __temp__4
-= __temp__4, n
+= __temp__4, 20
+[]= q, __temp__2, __temp__4
+.> n
 . __temp__5
-= __temp__5, __temp__4
-.[]> q, __temp__4
+= __temp__5, n
+. __temp__6
+= __temp__6, __temp__5
+.[]> q, __temp__5
+.> m
+.> k
 endfunc
