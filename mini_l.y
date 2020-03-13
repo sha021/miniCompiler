@@ -17,6 +17,7 @@
  vector<string> labels;
  vector<string> temps;
  queue<string> holder;
+ queue<string> gotoLable;
  struct program_struct {string code;};
  struct function_struct {string code;};
  struct help_dec_semi_struct {string code;};
@@ -25,7 +26,7 @@
  struct declaration_struct {string code; string resultId;};
  struct declaration_par_struct {string code;};
  struct help_array_struct {string code;   string resultId;};
- struct statement_struct{string code;   string falseCode, resultId;};
+ struct statement_struct{string code;   string falseCode, resultId, contiLable;};
  struct bool_expr_struct {string code; string resultId;};
  struct help_if_then_struct {string code; string falseCode;   string resultId;};
  struct help_or_rae_struct {string code;  string resultId;};
@@ -293,8 +294,9 @@ statement:
       string loopLable = new_label();
       string exitLable = new_label();
       string restartLable = new_label();
-      
+      string contiLable = gotoLable.front();
       // RESTART
+      oss << ": " << contiLable << endl;
       oss << ": " << restartLable << endl;
 
       // CHECKING FIRST TIME
@@ -310,6 +312,7 @@ statement:
       oss << ":= " << restartLable << endl;
       oss << ": " << exitLable;
       $$->code = oss.str();
+      $$->contiLable = restartLable;
    }
    |DO BEGINLOOP help_state_semi ENDLOOP WHILE bool_expr {
       printf("statement ->  DO BEGINLOOP help_state_semi ENDLOOP WHILE bool_expr\n");
@@ -318,9 +321,11 @@ statement:
       string loopLable = new_label();
       string exitLable = new_label();
       string restartLable = new_label();
-      
+      string contiLable = gotoLable.front();
+
       oss << $3->code << endl;
       // RESTART
+      oss << ": " << contiLable << endl;
       oss << ": " << restartLable << endl;
 
       // CHECKING FIRST TIME
@@ -336,7 +341,7 @@ statement:
       oss << ":= " << restartLable << endl;
       oss << ": " << exitLable;
       $$->code = oss.str();
-   
+      $$->contiLable = restartLable;
    }
    |FOR var ASSIGN number SEMICOLON bool_expr SEMICOLON var ASSIGN expression BEGINLOOP help_state_semi ENDLOOP {
       printf("statement ->  FOR var ASSIGN number SEMICOLON bool_expr SEMICOLON var ASSIGN expression BEGINLOOP help_state_semi ENDLOOP\n");
@@ -347,23 +352,14 @@ statement:
       string restartLable = new_label();
       string loopLable = new_label();
       string exitLable = new_label();
-      //string varTemp = new_temp();
-      //oss << ". " << varTemp << endl;
-
+      string incrementLable = gotoLable.front();
 
       // INITIALIZAITON
       if ($2->type != "") {
-         // var -> expression code
-        // oss << $2->code << endl;
-        // oss << $4->code << endl;
-
          oss << "[]= " << $2->id << ", " << $2->index << ", " << $4->code << endl;
-        // oss << "=[] " << varTemp << ", " << $2->id << ", " << $2->index << endl;
-
       }
       else {
          oss << "= " << $2->code << ", " << $4->code << endl;
-         //oss << "= " << varTemp << ", " << $4->code << endl;
       }
 
       // RECHECKING CONDITION
@@ -379,6 +375,7 @@ statement:
       oss << $12->code << endl;
 
       // ICREMENT VAR
+      oss << ": " << incrementLable << endl;
       oss << $10->code << endl;
       if ($8->type != "") {
          //oss << $8->code << endl;
@@ -396,8 +393,6 @@ statement:
 
       $$->code = oss.str();
       $$->resultId = $6->resultId;
-      
-
    }
    |READ var help_var_comma {
       //printf("statement -> READ help_var_comma\n");
@@ -465,6 +460,14 @@ statement:
    }
    |CONTINUE {
       printf("statement -> CONTINUE\n");
+      $$ = new statement_struct;
+
+      string contiLable = new_label();
+      ostringstream oss;
+      oss << ":= " << contiLable;
+
+      $$->code = oss.str();
+      gotoLable.push(contiLable);
    }
    |RETURN expression {
       printf("statement -> RETURN expression\n");
@@ -546,10 +549,8 @@ help_var_comma:
       oss << $3->code;
       oss << $1->code;
 
-      cout << "COOOODDDEE ________ " << $3->code << endl;
-
       holder.push($3->type);
-            holder.push($3->code);
+      holder.push($3->code);
       holder.push($3->id);
       holder.push($3->index);
 
@@ -563,17 +564,6 @@ help_var_comma:
       $$ = new help_var_comma_struct;
       $$->code = "";
    };
-
-   // |var {
-   //    //printf("help_var_comma -> var\n");
-   //    $$ = new help_var_comma_struct;
-   //    ostringstream oss;
-   //    oss << $1->code;
-   //    $$->code = oss.str();
-   //    $$->type = $1->type;
-   //    $$->id= $1->id;
-   //    $$->index = $1->index;
-   // };
 
 relation_and_expr:	
    relation_expr {
@@ -667,7 +657,14 @@ help_re_choices:
       $$->code = oss.str();
       $$->resultId = temp;
    }
-   |L_PAREN bool_expr R_PAREN {printf("help_re_choices -> L_PAREN bool_expr R_PAREN\n");}
+   |L_PAREN bool_expr R_PAREN {
+      printf("help_re_choices -> L_PAREN bool_expr R_PAREN\n");
+      $$ = new help_re_choices_struct;
+      ostringstream oss;
+      oss << $2->code;
+      $$->code = oss.str();
+      $$->resultId = $2->resultId;
+   }
    ;
 
 comp:           
@@ -817,12 +814,17 @@ term:
    SUB help_vne_choices {printf("term -> SUB help_vne_choices\n");
       printf("term -> help_vne_choices\n");
       $$ = new term_struct;
-      ostringstream oss;
+   ostringstream oss;
       string temp = new_temp();
+      if ($2->type != "") oss << $2->code;
       oss << ". " << temp << endl;
-      oss << "= " << temp << ", -" << $2->code;
+      oss << "= " << temp << ", -" << $2->resultId;
+      
       $$->code = oss.str();
       $$->resultId = temp;
+      $$->type = $2->type;
+      $$->id = $2->id;
+      $$->index = $2->index;
    }
    |help_vne_choices {
       printf("term -> help_vne_choices\n");
@@ -839,13 +841,37 @@ term:
       $$->id = $1->id;
       $$->index = $1->index;
    }
-   |ident L_PAREN help_expr R_PAREN {printf("term -> ident L_PAREN help_expr R_PAREN\n");}
+   |ident L_PAREN help_expr R_PAREN {
+      printf("term -> ident L_PAREN help_expr R_PAREN\n");
+      
+      $$ = new term_struct;
+
+      string param = new_temp();
+      string funcResult = new_temp();
+      ostringstream oss;
+
+      oss << $3->code << endl;
+      oss << ". " << param << endl;
+      oss << "= " << param  << $3->resultId << endl;
+
+      oss << ". " << funcResult << endl;
+      oss << "call " << $1->code << ", " << funcResult << endl;
+
+      $$->code = oss.str();
+      $$->resultId = funcResult;
+   }
    |ident L_PAREN R_PAREN {
       printf("term -> ident L_PAREN R_PAREN\n");
       $$ = new term_struct;
+      
+      string funcResult = new_temp();
       ostringstream oss;
-      oss << $1->code;
-      $$->code = oss.str(); 
+
+      oss << ". " << funcResult << endl;
+      oss << "call " << $1->code << ", " << funcResult << endl;
+
+      $$->code = oss.str();
+      $$->resultId = funcResult;
    };
 
 help_vne_choices:       

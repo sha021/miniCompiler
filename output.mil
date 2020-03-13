@@ -11,6 +11,16 @@ help_vne_choices -> var
 term -> help_vne_choices
 multiplicative_expr -> term
 expression -> multiplicative_expr
+help_vne_choices -> number
+term -> help_vne_choices
+multiplicative_expr -> term
+expression -> multiplicative_expr SUB expression
+statement -> var ASSIGN expression
+statement -> CONTINUE
+help_vne_choices -> var
+term -> help_vne_choices
+multiplicative_expr -> term
+expression -> multiplicative_expr
 comp -> GT
 help_vne_choices -> number
 term -> help_vne_choices
@@ -19,15 +29,7 @@ expression -> multiplicative_expr
 help_re_choices -> expression comp expression
 relation_expr -> help_re_choices
 relation_and_expr -> relation_expr
-help_vne_choices -> var
-term -> help_vne_choices
-multiplicative_expr -> term
-expression -> multiplicative_expr
-help_vne_choices -> number
-term -> help_vne_choices
-multiplicative_expr -> term
-expression -> multiplicative_expr SUB expression
-statement ->  FOR var ASSIGN number SEMICOLON bool_expr SEMICOLON var ASSIGN expression BEGINLOOP help_state_semi ENDLOOP
+statement ->  DO BEGINLOOP help_state_semi ENDLOOP WHILE bool_expr
 func main
 . n
 . m
@@ -35,28 +37,39 @@ func main
 .[] p, 1
 .[] q, 1
 . __temp__1
-= __temp__1, 7
+= __temp__1, 3
 = n, __temp__1
-= n, 5
-: L1
+.> n
 . __temp__2
 = __temp__2, n
 . __temp__3
-= __temp__3, 0
+= __temp__3, 5
 . __temp__4
-> __temp__4, __temp__2, __temp__3
-?:= L2, __temp__4
-:= L3
-: L2
+- __temp__4, __temp__2, __temp__3
+= n, __temp__4
+:= L1
 .> n
+: L1
+: L4
 . __temp__5
 = __temp__5, n
 . __temp__6
-= __temp__6, 1
+= __temp__6, 0
 . __temp__7
-- __temp__7, __temp__5, __temp__6
-= n, __temp__7
+> __temp__7, __temp__5, __temp__6
+?:= L2, __temp__7
+:= L3
+: L2
+. __temp__2
+= __temp__2, n
+. __temp__3
+= __temp__3, 5
+. __temp__4
+- __temp__4, __temp__2, __temp__3
+= n, __temp__4
 := L1
+.> n
+:= L4
 : L3
 .> n
 endfunc
