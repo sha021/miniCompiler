@@ -256,7 +256,7 @@ help_array:
       //printf("help_array -> epsilon\n");
       $$ = new help_array_struct;
       $$->code = "";
-      $$->resultId = "0";
+      $$->resultId = "";
    }
    |ARRAY L_SQUARE_BRACKET number R_SQUARE_BRACKET OF {
       printf("help_array -> ARRAY L_SQUARE_BRACKET number R_SQUARE_BRACKET OF\n");
@@ -288,12 +288,116 @@ statement:
    }
 	|WHILE bool_expr BEGINLOOP help_state_semi ENDLOOP {
       printf("statement -> WHILE bool_expr BEGINLOOP help_state_semi ENDLOOP\n");
+      $$ = new statement_struct;
+      ostringstream oss;
+      string loopLable = new_label();
+      string exitLable = new_label();
+      string restartLable = new_label();
+      
+      // RESTART
+      oss << ": " << restartLable << endl;
+
+      // CHECKING FIRST TIME
+      oss << $2->code;
+      oss << "?:= " << loopLable << ", " << $2->resultId << endl;
+      oss << ":= " << exitLable << endl;
+      
+      //TRUE
+      oss << ": " << loopLable << endl;
+      oss << $4->code << endl;
+      
+      //check if while condition is true
+      oss << ":= " << restartLable << endl;
+      oss << ": " << exitLable;
+      $$->code = oss.str();
    }
    |DO BEGINLOOP help_state_semi ENDLOOP WHILE bool_expr {
       printf("statement ->  DO BEGINLOOP help_state_semi ENDLOOP WHILE bool_expr\n");
+      $$ = new statement_struct;
+      ostringstream oss;
+      string loopLable = new_label();
+      string exitLable = new_label();
+      string restartLable = new_label();
+      
+      oss << $3->code << endl;
+      // RESTART
+      oss << ": " << restartLable << endl;
+
+      // CHECKING FIRST TIME
+      oss << $6->code;
+      oss << "?:= " << loopLable << ", " << $6->resultId << endl;
+      oss << ":= " << exitLable << endl;
+      
+      //TRUE
+      oss << ": " << loopLable << endl;
+      oss << $3->code << endl;
+      
+      //check if while condition is true
+      oss << ":= " << restartLable << endl;
+      oss << ": " << exitLable;
+      $$->code = oss.str();
+   
    }
    |FOR var ASSIGN number SEMICOLON bool_expr SEMICOLON var ASSIGN expression BEGINLOOP help_state_semi ENDLOOP {
       printf("statement ->  FOR var ASSIGN number SEMICOLON bool_expr SEMICOLON var ASSIGN expression BEGINLOOP help_state_semi ENDLOOP\n");
+
+      $$ = new statement_struct;
+      ostringstream oss;
+
+      string restartLable = new_label();
+      string loopLable = new_label();
+      string exitLable = new_label();
+      //string varTemp = new_temp();
+      //oss << ". " << varTemp << endl;
+
+
+      // INITIALIZAITON
+      if ($2->type != "") {
+         // var -> expression code
+        // oss << $2->code << endl;
+        // oss << $4->code << endl;
+
+         oss << "[]= " << $2->id << ", " << $2->index << ", " << $4->code << endl;
+        // oss << "=[] " << varTemp << ", " << $2->id << ", " << $2->index << endl;
+
+      }
+      else {
+         oss << "= " << $2->code << ", " << $4->code << endl;
+         //oss << "= " << varTemp << ", " << $4->code << endl;
+      }
+
+      // RECHECKING CONDITION
+      oss << ": " << restartLable << endl;
+      
+      // CHECKING CONDITION FIRST TIME
+      oss << $6->code;
+      oss << "?:= " << loopLable << ", " << $6->resultId << endl;
+      oss << ":= " << exitLable << endl;
+      
+      // TRUE
+      oss << ": " << loopLable << endl;
+      oss << $12->code << endl;
+
+      // ICREMENT VAR
+      oss << $10->code << endl;
+      if ($8->type != "") {
+         //oss << $8->code << endl;
+         oss << "[]= " << $8->id << ", " << $8->index << ", " << $10->resultId << endl;
+      }
+      else {
+         oss << "= " << $8->code << ", " << $10->resultId << endl;
+      }
+
+      // GO BACK TO THE LOOP
+      oss << ":= " << restartLable << endl;
+
+      // EXIT IS HERE
+      oss << ": " << exitLable;
+
+      $$->code = oss.str();
+      $$->resultId = $6->resultId;
+      
+
    }
    |READ var help_var_comma {
       //printf("statement -> READ help_var_comma\n");

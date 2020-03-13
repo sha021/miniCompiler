@@ -6,12 +6,10 @@ beginlocals
 	p, q : array [1] of integer;
 endlocals
 beginbody
-	n := 0;
-	read m, k;
-	q[n] := 20;
-	write n, q[n], m, k;
-	##read q[0];
-	##q[0] := 0;
-	##p[q[0]] := 1;
-	##write p[q[0]];
+	n := 7;
+	for n := 5; n > 0; n := n - 1
+	beginloop
+		write n;
+	endloop;
+	write n;
 endbody

@@ -7,33 +7,27 @@ term -> help_vne_choices
 multiplicative_expr -> term
 expression -> multiplicative_expr
 statement -> var ASSIGN expression
-help_var_comma -> var COMMA help_var_comma
-COOOODDDEE ________ k
 help_vne_choices -> var
 term -> help_vne_choices
 multiplicative_expr -> term
 expression -> multiplicative_expr
-var -> ident L_SQUARE_BRACKET expression R_SQUARE_BRACKET
+comp -> GT
 help_vne_choices -> number
 term -> help_vne_choices
 multiplicative_expr -> term
 expression -> multiplicative_expr
-statement -> var ASSIGN expression
+help_re_choices -> expression comp expression
+relation_expr -> help_re_choices
+relation_and_expr -> relation_expr
 help_vne_choices -> var
 term -> help_vne_choices
 multiplicative_expr -> term
 expression -> multiplicative_expr
-var -> ident L_SQUARE_BRACKET expression R_SQUARE_BRACKET
-help_var_comma -> var COMMA help_var_comma
-COOOODDDEE ________ . __temp__5
-= __temp__5, n
-. __temp__6
-= __temp__6, __temp__5
-
-help_var_comma -> var COMMA help_var_comma
-COOOODDDEE ________ m
-help_var_comma -> var COMMA help_var_comma
-COOOODDDEE ________ k
+help_vne_choices -> number
+term -> help_vne_choices
+multiplicative_expr -> term
+expression -> multiplicative_expr SUB expression
+statement ->  FOR var ASSIGN number SEMICOLON bool_expr SEMICOLON var ASSIGN expression BEGINLOOP help_state_semi ENDLOOP
 func main
 . n
 . m
@@ -41,23 +35,28 @@ func main
 .[] p, 1
 .[] q, 1
 . __temp__1
-= __temp__1, 0
+= __temp__1, 7
 = n, __temp__1
-.< m
-.< k
+= n, 5
+: L1
 . __temp__2
 = __temp__2, n
 . __temp__3
-= __temp__3, __temp__2
+= __temp__3, 0
 . __temp__4
-= __temp__4, 20
-[]= q, __temp__2, __temp__4
+> __temp__4, __temp__2, __temp__3
+?:= L2, __temp__4
+:= L3
+: L2
 .> n
 . __temp__5
 = __temp__5, n
 . __temp__6
-= __temp__6, __temp__5
-.[]> q, __temp__5
-.> m
-.> k
+= __temp__6, 1
+. __temp__7
+- __temp__7, __temp__5, __temp__6
+= n, __temp__7
+:= L1
+: L3
+.> n
 endfunc
