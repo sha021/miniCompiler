@@ -22,27 +22,27 @@
  struct help_dec_semi_struct {string code;};
  struct help_dec_semi_par_struct {string code;};
  struct help_state_semi_struct {string code;};
- struct declaration_struct {string code;};
+ struct declaration_struct {string code; string resultId;};
  struct declaration_par_struct {string code;};
- struct help_array_struct {string code;};
- struct statement_struct{string code;   string falseCode;};
+ struct help_array_struct {string code;   string resultId;};
+ struct statement_struct{string code;   string falseCode, resultId;};
  struct bool_expr_struct {string code; string resultId;};
  struct help_if_then_struct {string code; string falseCode;   string resultId;};
  struct help_or_rae_struct {string code;  string resultId;};
- struct help_var_comma_struct {string code;  string resultId;};
+ struct help_var_comma_struct {string code;  string resultId;  string index, id, type;};
  struct relation_and_expr_struct {string code;  string resultId;};
  struct help_and_re_struct{string code;};
  struct relation_expr_struct {string code;   string resultId;};
  struct help_re_choices_struct {string code; string resultId;};
  struct comp_struct {string code;};
- struct expression_struct {string code;   string resultId; string oper;};
+ struct expression_struct {string code, id, index;   string resultId; string oper; string type;};
  struct help_pm_me_struct {string code;   string resultId;  string oper;};
- struct multiplicative_expr_struct {string code;  string resultId;};
+ struct multiplicative_expr_struct {string code, type, id, index;  string resultId;};
  struct help_mdm_term_struct {string code; string resultId;};
- struct term_struct {string code;   string resultId;};
- struct help_vne_choices_struct {string code;   string resultId;};
+ struct term_struct {string code, id, index, type;   string resultId;};
+ struct help_vne_choices_struct {string code, resultId, type, id, index;};
  struct help_expr_struct {string code; string resultId;};
- struct var_struct{string code;  string resultId;};
+ struct var_struct{string code;  string resultId;  string type;   string index; string id;};
  struct ident_struct {string code;  string resultId;};
  struct number_struct {string code;  string resultId;}; 
 %}
@@ -173,12 +173,15 @@ help_dec_semi_par:
 help_dec_semi: 
    {
       //printf("help_dec_semi -> epsilon\n");
+      $$ = new help_dec_semi_struct;
+      $$->code = "";
    }
-   |declaration SEMICOLON help_dec_semi {
+   |help_dec_semi declaration SEMICOLON {
       //printf("help_dec_semi -> declaration SEMICOLON help_dec_semi\n");
       $$ = new help_dec_semi_struct;
       ostringstream oss;
       oss << $1->code;
+      oss << $2->code;
       $$->code = oss.str();
    };
                 
@@ -190,12 +193,12 @@ help_state_semi:
       oss << $1->code ;
       $$->code = oss.str();
    }
-   |statement SEMICOLON help_state_semi {
+   |help_state_semi statement SEMICOLON {
       //printf("help_state_semi -> statement SEMICOLON help_state_semi\n");
       $$ = new help_state_semi_struct;
       ostringstream oss;
       oss << $1->code << endl;
-      oss << $3->code;
+      oss << $2->code ;
       $$->code = oss.str();
    };
 
@@ -223,15 +226,27 @@ declaration:
       //printf("declaration -> ident COLON help_array INTEGER\n");
       $$ = new declaration_struct;
       ostringstream oss;
-      oss << ". " << $1->code << endl;
+
+      if ($3->code != "")
+         oss << ".[] " << $1->code << ", " << $3->code << endl;   
+      else 
+         oss << ". " << $1->code << endl;
+      
+      $$->resultId = $3->code;
       $$->code = oss.str();
    }
+
    |ident COMMA declaration {
-      //printf("ident COMMA declaration\n");
+      printf("ident COMMA declaration\n");
       $$ = new declaration_struct;
       ostringstream oss;
-      oss << ". " << $1->code << endl;
-      oss << $3->code;
+
+      if ($3->resultId != "")
+         oss << ".[] " << $1->code << ", " << $3->resultId << endl; 
+      else 
+         oss << ". " << $1->code << endl;   
+      
+      oss << $3->code; 
       $$->code = oss.str();
       delete $1;
    };
@@ -241,9 +256,15 @@ help_array:
       //printf("help_array -> epsilon\n");
       $$ = new help_array_struct;
       $$->code = "";
+      $$->resultId = "0";
    }
    |ARRAY L_SQUARE_BRACKET number R_SQUARE_BRACKET OF {
       printf("help_array -> ARRAY L_SQUARE_BRACKET number R_SQUARE_BRACKET OF\n");
+      $$ = new help_array_struct;
+      ostringstream oss;
+      oss << $3->code;
+      $$->code = oss.str();
+      $$->resultId = $3->code;
    };
 
 statement:     
@@ -277,15 +298,25 @@ statement:
    |READ help_var_comma {
       //printf("statement -> READ help_var_comma\n");
       $$ = new statement_struct;
+      string temp;
       ostringstream oss;
-      oss << ".< " << $2->code;
+      if ($2->type != "") {
+         oss << $2->code;
+         oss << ".[]< " << $2->id << ", " << $2->index;
+      }
+      else oss << ".< " << $2->code;
       $$->code = oss.str();
    }                
    |WRITE help_var_comma {
       //printf("statement -> WRITE help_var_comma\n");
       $$ = new statement_struct;
       ostringstream oss;
-      oss << ".> " << $2->code;
+
+      if ($2->type != "") {
+         oss << $2->code;
+         oss << ".[]> " << $2->id << ", " << $2->index;
+      }
+      else oss << ".> " << $2->code;
       $$->code = oss.str();
    }
    |CONTINUE {
@@ -298,8 +329,21 @@ statement:
       printf("statement -> var ASSIGN expression\n");
       $$ = new statement_struct;
       ostringstream oss;
-      oss << $3->code << endl;
-      oss << "= " << $1->code << ", " << $3->resultId;
+
+      if ($1->type != "id") {
+         // var -> expression code
+         oss << $1->code;
+         oss << $3->code << endl;
+
+         oss << "[]= " << $1->id << ", " << $1->index << ", " << $3->resultId;
+         $$->resultId = $1->id;        
+      }
+
+      else {
+         oss << $3->code << endl;
+         oss << "= " << $1->code << ", " << $3->resultId;
+         $$->resultId = $1->resultId;
+      }
       $$->code = oss.str();
    };		
 
@@ -359,6 +403,9 @@ help_var_comma:
       ostringstream oss;
       oss << $1->code;
       $$->code = oss.str();
+      $$->type = $1->type;
+      $$->id= $1->id;
+      $$->index = $1->index;
    };
 
 relation_and_expr:	
@@ -487,10 +534,14 @@ expression:
    multiplicative_expr {
       printf("expression -> multiplicative_expr\n");
       $$ = new expression_struct;
+
       ostringstream oss;
       oss << $1->code;
       $$->code = oss.str();
       $$->resultId = $1->resultId;
+      $$->type = $1->type;
+      $$->id = $1->id;
+      $$->index = $1->index;
    }
 
    |expression ADD multiplicative_expr {
@@ -534,6 +585,9 @@ multiplicative_expr:
       oss << $1->code;
       $$->code = oss.str();
       $$->resultId = $1->resultId;
+      $$->type = $1->type;
+      $$->id = $1->id;
+      $$->index =$1->index;
    }
    |multiplicative_expr MULT term {
       printf("multiplicative_expr -> term MULT multiplicative_expr\n");
@@ -608,10 +662,15 @@ term:
       $$ = new term_struct;
       ostringstream oss;
       string temp = new_temp();
+      if ($1->type == "array") oss << $1->code;
       oss << ". " << temp << endl;
-      oss << "= " << temp << ", " << $1->code;
+      oss << "= " << temp << ", " << $1->resultId;
+      
       $$->code = oss.str();
       $$->resultId = temp;
+      $$->type = $1->type;
+      $$->id = $1->id;
+      $$->index = $1->index;
    }
    |ident L_PAREN help_expr R_PAREN {printf("term -> ident L_PAREN help_expr R_PAREN\n");}
    |ident L_PAREN R_PAREN {
@@ -628,16 +687,31 @@ help_vne_choices:
       $$ = new help_vne_choices_struct;
       ostringstream oss;
       oss << $1->code;
+
       $$->code = oss.str();
+      $$->type = $1->type;
+      $$->resultId = $1->resultId;
+      $$->id = $1->id;
+      $$->index = $1->index;
    }
    | number {
       printf("help_vne_choices -> number\n");
       $$ = new help_vne_choices_struct;
       ostringstream oss;
       oss << $1->code;
+
       $$->code = oss.str();
+      $$->resultId = $1->code;
+      $$->index = $1->code;
+      $$->type = "number";
    }
-   | L_PAREN expression R_PAREN {printf("help_vne_choices -> L_PAREN expression R_PAREN\n");}
+   | L_PAREN expression R_PAREN {printf("help_vne_choices -> L_PAREN expression R_PAREN\n");
+      $$ = new help_vne_choices_struct;
+      ostringstream oss;
+      oss << $2->code;
+      $$->code = oss.str();
+      $$->type = $2->type;
+   }
    ;
 
 help_expr:       
@@ -658,9 +732,32 @@ var:
       ostringstream oss;
       oss << $1->code;
       $$->code = oss.str();
+      $$->resultId = $1->code;
+      $$->type = "id";
    }
-   | ident L_SQUARE_BRACKET expression R_SQUARE_BRACKET {printf("var -> ident L_SQUARE_BRACKET expression R_SQUARE_BRACKET\n");}
-   ;
+   | ident L_SQUARE_BRACKET expression R_SQUARE_BRACKET {printf("var -> ident L_SQUARE_BRACKET expression R_SQUARE_BRACKET\n");
+      $$ = new var_struct;
+   
+      ostringstream oss;
+      oss << $3->code << endl;
+      // code for expression
+      
+      string temp = new_temp();
+      if ($3->type == "array"){
+         oss << ". " << temp << endl;
+         oss << "=[] " << temp << ", " << $3->id << ", " << $3->index << endl; 
+      }      
+      else {
+         oss << ". " << temp << endl;
+         oss << "= " << temp << ", " << $3->resultId << endl; 
+      }
+
+      $$->id = $1->code;
+      $$->index = $3->resultId;
+      $$->resultId = temp;
+      $$->code = oss.str();
+      $$->type = "array";   
+   };
 
 ident:         
    IDENT {

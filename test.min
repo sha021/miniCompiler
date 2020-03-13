@@ -2,11 +2,15 @@ function main;
 beginparams
 endparams
 beginlocals
-	p : integer;
+	n, m : integer;
+	p, q : array [1] of integer;
 endlocals
 beginbody
-	if false then p := 1;
-	else p := 0;
-	endif;
-	write p;
+	n := 0;
+	read q[n];
+	write q[n];
+	##read q[0];
+	##q[0] := 0;
+	##p[q[0]] := 1;
+	##write p[q[0]];
 endbody

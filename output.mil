@@ -1,32 +1,37 @@
-help_re_choices -> FALSE
-relation_expr -> help_re_choices
-relation_and_expr -> relation_expr
+ident COMMA declaration
+help_array -> ARRAY L_SQUARE_BRACKET number R_SQUARE_BRACKET OF
+ident COMMA declaration
 help_vne_choices -> number
 term -> help_vne_choices
 multiplicative_expr -> term
 expression -> multiplicative_expr
 statement -> var ASSIGN expression
-help_vne_choices -> number
+help_vne_choices -> var
 term -> help_vne_choices
 multiplicative_expr -> term
 expression -> multiplicative_expr
-statement -> var ASSIGN expression
-help_if_then -> help_state_semi ELSE help_state_semi
+var -> ident L_SQUARE_BRACKET expression R_SQUARE_BRACKET
+help_vne_choices -> var
+term -> help_vne_choices
+multiplicative_expr -> term
+expression -> multiplicative_expr
+var -> ident L_SQUARE_BRACKET expression R_SQUARE_BRACKET
 func main
-. p
+. n
+. m
+.[] p, 1
+.[] q, 1
 . __temp__1
 = __temp__1, 0
-?:= L1, __temp__1
-:= L2
-: L1
+= n, __temp__1
 . __temp__2
-= __temp__2, 1
-= p, __temp__2
-:= L3
-: L2
+= __temp__2, n
 . __temp__3
-= __temp__3, 0
-= p, __temp__3
-: L3
-.> p
+= __temp__3, __temp__2
+.[]< q, __temp__2
+. __temp__4
+= __temp__4, n
+. __temp__5
+= __temp__5, __temp__4
+.[]> q, __temp__4
 endfunc
